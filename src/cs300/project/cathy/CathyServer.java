@@ -29,7 +29,7 @@ import javax.swing.*;
  */
 public class CathyServer {
 
-	// port number
+    // port number
     private static final int PORT = 4444;
     // dictionary of all registered users (String username : String password)
     private static Properties users = new Properties();
@@ -61,7 +61,7 @@ public class CathyServer {
      */
     private static class Handler extends Thread {
 
-    	// username of connecting client
+        // username of connecting client
         private String name;
         // corresponding password
         private String password;
@@ -93,7 +93,7 @@ public class CathyServer {
                 // event loop prompts client for login information and
                 // logs user in
                 while (true) {
-                	// get username
+                    // get username
                     out.println("SUBMITNAME");
                     name = in.readLine();
                     // get password
@@ -104,23 +104,23 @@ public class CathyServer {
                     }
                     // create new account if new user
                     if (!users.containsKey(name)) {
-                    	users.put(name, password);
+                        users.put(name, password);
                     }
                     // reject password if wrong
                     if (!(users.get(name).equals(password))) {
-                    	out.println("WRONGPASS");
+                        out.println("WRONGPASS");
                     } else {
-                    	// add username to list of users currently online
-                    	synchronized (names) {
-                    		if (!names.contains(name)) {
-                    			names.addElement(name);
-                    			break;
-                    		} else {
-                    			// notify client that requested username is already logged in
-                    			// and may not log in again simultaneously
-                    			out.println("DUPLICATE");
-                    		}
-                    	}
+                        // add username to list of users currently online
+                        synchronized (names) {
+                            if (!names.contains(name)) {
+                                names.addElement(name);
+                                break;
+                            } else {
+                                // notify client that requested username is already logged in
+                                // and may not log in again simultaneously
+                                out.println("DUPLICATE");
+                            }
+                        }
                     }
                 }
 
@@ -130,70 +130,70 @@ public class CathyServer {
                 writers.add(out);
                 // if new user add username to convos dictionary
                 if (!convos.containsKey(name)) {
-                	convos.put(name, "");
+                    convos.put(name, "");
                 }
                 // send user current buddy list
-    			Object[] nameStrings = names.toArray();
-    			for (Object aName : nameStrings) {
-    				out.println("BUDDON " + aName);
-    			}
-    			// notify all clients that this user has signed on
-    			// so they can update their buddy lists
-            	for (PrintWriter writer : writers) {
+                Object[] nameStrings = names.toArray();
+                for (Object aName : nameStrings) {
+                    out.println("BUDDON " + aName);
+                }
+                // notify all clients that this user has signed on
+                // so they can update their buddy lists
+                for (PrintWriter writer : writers) {
                     writer.println("BUDDON " + name);
-            	}
+                }
 
-            	// sit and listen for messages and client requests
+                // sit and listen for messages and client requests
                 while (true) {
-                	// get input
+                    // get input
                     String input = in.readLine();
                     // handle cases:
                     // null
                     if (input == null) {
                         return;
                     } else if (input.startsWith("PUBLIC")) {
-                    	// PUBLIC MESSAGE
-                    	String message = input.substring(7);
-                    	// broadcast to all clients
-                    	for (PrintWriter writer : writers) {
+                        // PUBLIC MESSAGE
+                        String message = input.substring(7);
+                        // broadcast to all clients
+                        for (PrintWriter writer : writers) {
                             writer.println("MESSAGE " + name + ": " + message);
                         }
-                    	// add to convo logs of all online users
-            			Object[] nameStrngs = names.toArray();
-            			for (Object aName : nameStrngs) {
-            				convos.setProperty("" + aName, ("" + convos.get(aName)).concat(name + ": " + message + "\n"));
-            			}
+                        // add to convo logs of all online users
+                        Object[] nameStrngs = names.toArray();
+                        for (Object aName : nameStrngs) {
+                            convos.setProperty("" + aName, ("" + convos.get(aName)).concat(name + ": " + message + "\n"));
+                        }
                     } else if (input.startsWith("PRIVATE")) {
-                    	// PRIVATE MESSAGE
-                    	String recipient = input.substring(8);
-                    	String pMessage = in.readLine();
-                    	if (pMessage == null) {
-                    		return;
-                    	} else {
-                    		// send message to all clients along with the recipient's name
-                    		// it is the client's responsibility to display the message if it is
-                    		// intended for that client's user and discard it otherwise
-                        	for (PrintWriter writer : writers) {
+                        // PRIVATE MESSAGE
+                        String recipient = input.substring(8);
+                        String pMessage = in.readLine();
+                        if (pMessage == null) {
+                            return;
+                        } else {
+                            // send message to all clients along with the recipient's name
+                            // it is the client's responsibility to display the message if it is
+                            // intended for that client's user and discard it otherwise
+                            for (PrintWriter writer : writers) {
                                 writer.println("PMESSAGE " + recipient);
                                 writer.println(name + ": " + pMessage);
-                        	}
-                    	}
+                            }
+                        }
                     } else if (input.startsWith("LOGS")) {
-                    	// RETRIEVE LOGS REQUEST
-                    	String userLogs = "" + convos.get(name);
-                    	out.println("LOGS " + userLogs + " END");
+                        // RETRIEVE LOGS REQUEST
+                        String userLogs = "" + convos.get(name);
+                        out.println("LOGS " + userLogs + " END");
                     }
                 }
             } catch (IOException e) {
                 System.out.println(e);
             } finally {
-            	// this client has left the building
+                // this client has left the building
                 // notify all clients that this user has signed off
-            	// so they can update their buddy lists
-             	for (PrintWriter writer : writers) {
+                // so they can update their buddy lists
+                for (PrintWriter writer : writers) {
                      writer.println("BUDDOFF " + name);
-             	}
-             	// remove user from currently online list
+                }
+                // remove user from currently online list
                 if (name != null) {
                     names.removeElement(name);
                 }
